@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Impedir acesso direto aos diretórios sensíveis
+  RewriteRule ^(app|config|vendor)/ - [F,L]
+  # Ou, para negar acesso a arquivos .php dentro desses diretórios
+  # RewriteRule ^(app|config|vendor)/.*\.php$ - [F,L]
+
+  # Não aplicar regras para arquivos e diretórios existentes
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # Redirecionar todas as outras requisições para index.php
+  # O parâmetro 'url' conterá o caminho solicitado
+  RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]
+</IfModule>
