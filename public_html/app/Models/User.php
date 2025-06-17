@@ -69,7 +69,7 @@ class User
      */
     public function findByEmail(string $email): array|false // TODO: Considerar retornar um objeto User
     {
-        $stmt = $this->db->prepare("SELECT id, name, email, cpf, password FROM users WHERE email = :email");
+        $stmt = $this->db->prepare("SELECT id, name, email, cpf, password, email_verified_at FROM users WHERE email = :email");
         $stmt->bindParam(':email', $email);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);

@@ -25,6 +25,10 @@ class UserController extends Controller
     public function __construct()
     {
         parent::__construct(); // Se o Controller base tiver um construtor
+        // Iniciar a sessão se ainda não estiver iniciada
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
         $this->userModel = new User();
         $this->mailService = new MailService();
     }
@@ -37,8 +41,7 @@ class UserController extends Controller
     public function register(): void
     {
         // No MVP, vamos simplesmente incluir a view.
-        // Em um sistema mais completo, usaríamos um mecanismo de template.
-        require APP_PATH . '/Views/User/register.php';
+        $this->view('User/register');
     }
 
     /**
@@ -95,6 +98,69 @@ class UserController extends Controller
         } else {
             // Se não for POST, redireciona para o formulário de registro
             header('Location: /user/register'); // Ajustar conforme sua rota
+            exit;
+        }
+    }
+
+    /**
+     * Exibe o formulário de login.
+     *
+     * @return void
+     */
+    public function loginForm(): void
+    {
+        $this->view('User/login');
+    }
+
+    /**
+     * Processa a autenticação do usuário.
+     *
+     * @return void
+     */
+    public function authenticate(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $password = $_POST['password'] ?? '';
+            $errors = [];
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = "E-mail inválido.";
+            }
+            if (empty($password)) {
+                $errors[] = "Senha é obrigatória.";
+            }
+
+            if (empty($errors)) {
+                $user = $this->userModel->findByEmail($email);
+
+                if ($user) {
+                    // Verificar se o e-mail foi confirmado
+                    if (empty($user['email_verified_at'])) {
+                        $errors[] = "Por favor, confirme seu e-mail antes de fazer login.";
+                        $this->view('User/login', ['errors' => $errors, 'post' => $_POST]);
+                        return;
+                    }
+
+                    if (password_verify($password, $user['password'])) {
+                        // Login bem-sucedido
+                        $_SESSION['user_id'] = $user['id'];
+                        $_SESSION['user_name'] = $user['name'];
+                        // TODO: Limpar tentativas de login falhas para este usuário
+                        // TODO: Redirecionar para o painel do usuário ou página inicial logada
+                        header('Location: /'); // Exemplo: redirecionar para a home
+                        exit;
+                    }
+                }
+                // Se chegou aqui, o e-mail não existe ou a senha está incorreta
+                // TODO: Implementar contador de tentativas e bloqueio (RF02)
+                $errors[] = "E-mail ou senha inválidos.";
+            }
+
+            $this->view('User/login', ['errors' => $errors, 'post' => $_POST]);
+
+        } else {
+            header('Location: /user/login'); // Rota para o formulário de login
             exit;
         }
     }

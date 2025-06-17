@@ -99,10 +99,10 @@ class Router
             if (method_exists($controllerInstance, $methodName)) {
                 call_user_func_array([$controllerInstance, $methodName], $this->params);
             } else {
-                throw new \Exception("Método {$methodName} não encontrado no controller {$controllerClass}");
+                throw new \Exception('Método {$methodName} não encontrado no controller {$controllerClass}');
             }
         } else {
-            throw new \Exception("Controller {$controllerClass} não encontrado");
+            throw new \Exception('Controller {$controllerClass} não encontrado');
         }
     }
 }

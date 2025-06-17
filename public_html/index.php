@@ -37,8 +37,8 @@ $router->addRoute('POST', '/user/create', 'UserController@create');    // Proces
 $router->addRoute('GET', '/user/verify/{token}', 'UserController@verifyEmail'); // Verifica e-mail
 
 // RF02: Login de Usuário (exemplos de rotas)
-// $router->addRoute('GET', '/login', 'UserController@loginForm');
-// $router->addRoute('POST', '/login', 'UserController@login');
+$router->addRoute('GET', '/user/login', 'UserController@loginForm');
+$router->addRoute('POST', '/user/authenticate', 'UserController@authenticate');
 // $router->addRoute('GET', '/logout', 'UserController@logout');
 
 // RF03 & RF05: Bebês (cadastro e visualização)
