@@ -13,6 +13,10 @@ define('APP_PATH', PATH_ROOT . '/app'); // Caminho para o diretório 'app'
 // Autoload do Composer
 require_once PATH_ROOT . '/vendor/autoload.php';
 
+// Carregar variáveis de ambiente do .env
+$dotenv = Dotenv\Dotenv::createImmutable(PATH_ROOT);
+$dotenv->load();
+
 // Opcional: Carregar configurações globais ou do banco de dados
 // Ex: $dbConfig = require PATH_ROOT . '/config/database.php';
 // if (class_exists('\App\Core\Database')) {
@@ -30,6 +34,7 @@ $router->addRoute('GET', '/', 'HomeController@index'); // Controller e método p
 // RF01: Cadastro de Usuário
 $router->addRoute('GET', '/user/register', 'UserController@register'); // Exibe formulário de cadastro
 $router->addRoute('POST', '/user/create', 'UserController@create');    // Processa cadastro
+$router->addRoute('GET', '/user/verify/{token}', 'UserController@verifyEmail'); // Verifica e-mail
 
 // RF02: Login de Usuário (exemplos de rotas)
 // $router->addRoute('GET', '/login', 'UserController@loginForm');
