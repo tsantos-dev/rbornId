@@ -11,7 +11,7 @@ return [
     'dsn' => 'mysql:host=localhost;dbname=rborndb;charset=utf8mb4',
 
     'username' => 'root', // Seu usuário do banco de dados
-    'password' => '',    // Sua senha do banco de dados
+    'password' => 'password',    // Sua senha do banco de dados
 
     'options' => [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Lança exceções em erros

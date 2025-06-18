@@ -41,9 +41,9 @@ $router->addRoute('GET', '/user/login', 'UserController@loginForm');
 $router->addRoute('POST', '/user/authenticate', 'UserController@authenticate');
 // $router->addRoute('GET', '/logout', 'UserController@logout');
 
-// RF03 & RF05: Bebês (cadastro e visualização)
-// $router->addRoute('GET', '/baby/new', 'BabyController@createForm'); // Formulário para RF03
-// $router->addRoute('POST', '/baby/save', 'BabyController@save');     // Salvar dados do RF03
+// RF03: Cadastro de Bebê Reborn & RF05: Visualização
+$router->addRoute('GET', '/baby/new', 'BabyController@createForm'); // Exibe formulário de cadastro (RF03)
+$router->addRoute('POST', '/baby/save', 'BabyController@save');     // Processa cadastro (RF03)
 $router->addRoute('GET', '/baby/{registration_number}', 'BabyController@show'); // Exibir bebê (usado por RF05)
 
 // RF04: Geração de Documentos (exemplo)

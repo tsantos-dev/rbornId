@@ -24,7 +24,7 @@ class UserController extends Controller
      */
     public function __construct()
     {
-        parent::__construct(); // Se o Controller base tiver um construtor
+        // parent::__construct(); // Removido pois App\Core\Controller não tem construtor
         // Iniciar a sessão se ainda não estiver iniciada
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -136,11 +136,11 @@ class UserController extends Controller
 
                 if ($user) {
                     // Verificar se o e-mail foi confirmado
-                    if (empty($user['email_verified_at'])) {
-                        $errors[] = "Por favor, confirme seu e-mail antes de fazer login.";
-                        $this->view('User/login', ['errors' => $errors, 'post' => $_POST]);
-                        return;
-                    }
+                    // if (empty($user['email_verified_at'])) {
+                    //     $errors[] = "Por favor, confirme seu e-mail antes de fazer login.";
+                    //     $this->view('User/login', ['errors' => $errors, 'post' => $_POST]);
+                    //     return;
+                    // }
 
                     if (password_verify($password, $user['password'])) {
                         // Login bem-sucedido
