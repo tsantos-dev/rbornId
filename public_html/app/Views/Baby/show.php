@@ -79,7 +79,7 @@
                     <dd class="col-sm-8">
                         <?php echo htmlspecialchars(number_format((float)$baby['height'], 2, ',', '.')); ?> m</dd>
 
-                    <dt class="col-sm-4">Maternidade (Artesão):</dt>
+                    <dt class="col-sm-4">Maternidade:</dt>
                     <dd class="col-sm-8"><?php echo htmlspecialchars($baby['maternity']); ?></dd>
 
                     <?php if (!empty($baby['mother_name'])): ?>
@@ -93,7 +93,7 @@
                     <?php endif; ?>
 
                     <?php if (!empty($baby['civil_registration'])): ?>
-                    <dt class="col-sm-4">Registro Civil (Fictício):</dt>
+                    <dt class="col-sm-4">Registro Civil:</dt>
                     <dd class="col-sm-8"><?php echo htmlspecialchars($baby['civil_registration']); ?></dd>
                     <?php endif; ?>
 

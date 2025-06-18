@@ -22,14 +22,8 @@ class BabyController extends Controller
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        // A chamada parent::__construct() não é necessária se App\Core\Controller não tiver um construtor.
-        // Se App\Core\Controller tiver um construtor, ele deve ser chamado aqui: parent::__construct();
-
-        // Redireciona para login se o usuário não estiver logado
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: /user/login');
-            exit;
-        }
+        // A verificação de login será feita por método, se necessário.
+        // parent::__construct(); // Se App\Core\Controller tiver um construtor
         $this->babyModel = new Baby();
     }
 
@@ -40,6 +34,11 @@ class BabyController extends Controller
      */
     public function createForm(): void
     {
+        // Protege esta rota específica
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /user/login');
+            exit;
+        }
         $this->view('Baby/create');
     }
 
@@ -50,7 +49,13 @@ class BabyController extends Controller
      */
     public function save(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_id'])) {
+        // Protege esta rota específica
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /user/login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'user_id' => $_SESSION['user_id'],
                 'name' => trim(filter_input(INPUT_POST, 'name', FILTER_SANITIZE_SPECIAL_CHARS) ?? ''),
@@ -162,17 +167,47 @@ class BabyController extends Controller
     private function validateBabyData(array $data, ?array $fileData): array
     {
         $errors = [];
-        // Validações conforme RF03
+        // Validações conforme RF03: Cadastro de Bebê Reborn
+        // Campos obrigatórios: nome do bebê, data de "nascimento", gênero, peso, altura, nome do artesão (maternity).
+        // "data de criação" é coberta por "birth_date" no nosso modelo.
+
         if (empty($data['name'])) $errors[] = "Nome do bebê é obrigatório.";
+
         if (empty($data['birth_date'])) {
             $errors[] = "Data de nascimento é obrigatória.";
         } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data['birth_date'])) {
             $errors[] = "Formato da data de nascimento inválido. Use YYYY-MM-DD.";
+        } else {
+            // Valida se a data é válida (ex: não é 31 de Fevereiro)
+            $d = \DateTime::createFromFormat('Y-m-d', $data['birth_date']);
+            if (!$d || $d->format('Y-m-d') !== $data['birth_date']) {
+                $errors[] = "Data de nascimento inválida.";
+            }
+            // Opcional: Validar se a data não é no futuro
+            // if ($d && $d > new \DateTime()) {
+            //     $errors[] = "Data de nascimento não pode ser no futuro.";
+            // }
         }
+
         if (empty($data['gender'])) $errors[] = "Gênero é obrigatório.";
-        if ($data['weight'] === false || $data['weight'] <= 0) $errors[] = "Peso inválido ou não informado.";
-        if ($data['height'] === false || $data['height'] <= 0) $errors[] = "Altura inválida ou não informada.";
-        if (empty($data['maternity'])) $errors[] = "Maternidade (Artesão) é obrigatória.";
+
+        if ($data['weight'] === false) { // filter_input retorna false em falha de validação
+            $errors[] = "Peso deve ser um número válido.";
+        } elseif (empty($data['weight']) && $data['weight'] !== 0.0 && $data['weight'] !== '0') { // Permite 0 se for o caso, mas geralmente peso > 0
+            $errors[] = "Peso é obrigatório.";
+        } elseif ($data['weight'] <= 0) {
+            $errors[] = "Peso deve ser maior que zero.";
+        }
+
+        if ($data['height'] === false) {
+            $errors[] = "Altura deve ser um número válido.";
+        } elseif (empty($data['height']) && $data['height'] !== 0.0 && $data['height'] !== '0') {
+            $errors[] = "Altura é obrigatória.";
+        } elseif ($data['height'] <= 0) {
+            $errors[] = "Altura deve ser maior que zero.";
+        }
+
+        if (empty($data['maternity'])) $errors[] = "Maternidade (Nome do Artesão) é obrigatória.";
 
         // Validação da imagem (opcional, mas se enviada, deve ser válida)
         if ($fileData && $fileData['error'] == UPLOAD_ERR_OK) {
