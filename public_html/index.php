@@ -47,11 +47,12 @@ $router->addRoute('POST', '/baby/save', 'BabyController@save');     // Processa 
 $router->addRoute('GET', '/baby/{registration_number}', 'BabyController@show'); // Exibir bebê (usado por RF05)
 
 // RF04: Geração de Documentos (exemplo)
-// $router->addRoute('GET', '/document/rg/{registration_number}', 'DocumentController@generateRg');
+$router->addRoute('GET', '/document/birth-certificate/{registration_number}', 'DocumentController@generateBirthCertificatePdf');
+
 
 // RF06: API REST
-$router->addRoute('GET', '/api/babies/{registration_number}', 'ApiController@getBaby');
-$router->addRoute('GET', '/api/validate/{registration_number}', 'ApiController@validateRegistration');
+$router->addRoute('GET', '/api/babies/{civil_registration}', 'ApiController@getBaby');
+$router->addRoute('GET', '/api/validate/{civil_registration}', 'ApiController@validateRegistration');
 
 // --- Fim da Definição de Rotas ---
 

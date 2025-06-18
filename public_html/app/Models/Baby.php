@@ -102,6 +102,20 @@ class Baby
     }
 
     /**
+     * Encontra um bebê pelo seu número de registro civil.
+     *
+     * @param string $civilRegistration O número de registro civil do bebê.
+     * @return array|false Retorna os dados do bebê como array ou false se não encontrado.
+     */
+    public function findByCivilRegistration(string $civilRegistration): array|false
+    {
+        $stmt = $this->db->prepare("SELECT * FROM babies WHERE civil_registration = :civil_registration");
+        $stmt->bindParam(':civil_registration', $civilRegistration);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Atualiza o campo civil_registration de um bebê.
      *
      * @param int $babyId O ID do bebê.

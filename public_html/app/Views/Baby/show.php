@@ -102,8 +102,9 @@
                     <dd class="col-sm-8"><?php echo nl2br(htmlspecialchars($baby['characteristics'])); ?></dd>
                     <?php endif; ?>
                 </dl>
-                <a href="/" class="btn btn-primary mt-3">Voltar para Início</a>
-                <!-- TODO: Adicionar link para gerar documentos -->
+                <a href="/" class="btn btn-secondary mt-3">Voltar para Início</a>
+                <a href="/document/birth-certificate/<?php echo htmlspecialchars($baby['registration_number']); ?>"
+                    class="btn btn-primary mt-3">Gerar Certidão de Nascimento</a>
             </div>
         </div>
         <?php else: ?>
