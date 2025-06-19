@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senha Redefinida - R-Born Id</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .container { max-width: 500px; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-3 text-success">Senha Redefinida com Sucesso!</h1>
+        <p class="lead">Sua senha foi alterada.</p>
+        <p>Agora você pode fazer login com sua nova senha.</p>
+        <a href="/user/login" class="btn btn-primary mt-3">Fazer Login</a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

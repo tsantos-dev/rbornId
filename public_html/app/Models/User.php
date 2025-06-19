@@ -164,6 +164,65 @@ class User
     }
 
     /**
+     * Salva o token de redefinição de senha e sua data de expiração para um usuário.
+     *
+     * @param int $userId O ID do usuário.
+     * @param string $token O token de redefinição.
+     * @param string $expiresAt A data de expiração do token (formato Y-m-d H:i:s).
+     * @return bool Retorna true em caso de sucesso, false caso contrário.
+     */
+    public function setPasswordResetToken(int $userId, string $token, string $expiresAt): bool
+    {
+        $sql = "UPDATE users 
+                SET password_reset_token = :token, 
+                    password_reset_expires_at = :expires_at
+                WHERE id = :user_id";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':token', $token);
+            $stmt->bindParam(':expires_at', $expiresAt);
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            // error_log("Erro ao salvar token de redefinição de senha: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Encontra um usuário pelo token de redefinição de senha.
+     *
+     * @param string $token O token de redefinição.
+     * @return array|false Retorna os dados do usuário ou false se não encontrado ou token expirado.
+     */
+    public function findByPasswordResetToken(string $token): array|false
+    {
+        $sql = "SELECT id, email, password_reset_expires_at FROM users 
+                WHERE password_reset_token = :token AND password_reset_expires_at > NOW()";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Atualiza a senha de um usuário e limpa os tokens de redefinição.
+     *
+     * @param int $userId O ID do usuário.
+     * @param string $newPassword A nova senha (plain text).
+     * @return bool Retorna true em caso de sucesso, false caso contrário.
+     */
+    public function updatePassword(int $userId, string $newPassword): bool
+    {
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+        $sql = "UPDATE users SET password = :password, password_reset_token = NULL, password_reset_expires_at = NULL WHERE id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':password', $hashedPassword);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    /**
      * TODO: Implementar validação de formato de CPF (RF01).
      * Esta função pode ser mais complexa, envolvendo cálculo de dígitos verificadores.
      * Por ora, uma validação simples de formato.

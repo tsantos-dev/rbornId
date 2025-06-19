@@ -306,6 +306,136 @@ class UserController extends Controller
         $this->view('User/profile', ['user' => $user]);
     }
 
+    /**
+     * Exibe o formulário para solicitar a redefinição de senha.
+     *
+     * @return void
+     */
+    public function forgotPasswordForm(): void
+    {
+        $this->view('User/forgot_password_form');
+    }
+
+    /**
+     * Processa a solicitação de redefinição de senha.
+     * Gera um token, salva no banco e (eventualmente) envia um e-mail.
+     *
+     * @return void
+     */
+    public function sendPasswordResetLink(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $errors = [];
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = "Formato de e-mail inválido.";
+            } else {
+                $user = $this->userModel->findByEmail($email);
+                if ($user) {
+                    $token = bin2hex(random_bytes(32));
+                    $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour')); // Token expira em 1 hora
+
+                    if ($this->userModel->setPasswordResetToken((int)$user['id'], $token, $expiresAt)) {
+                        // TODO: Descomentar e adaptar o envio de e-mail quando o MailService estiver configurado
+                        // $resetLink = $this->getBaseUrl() . "/user/reset-password/{$token}";
+                        // $emailBody = "<h1>Redefinição de Senha</h1>
+                        //               <p>Você solicitou a redefinição de senha para sua conta no R-Born Id.</p>
+                        //               <p>Clique no link abaixo para criar uma nova senha:</p>
+                        //               <p><a href='{$resetLink}'>Redefinir Senha</a></p>
+                        //               <p>Este link expirará em 1 hora.</p>
+                        //               <p>Se você não solicitou esta alteração, por favor ignore este e-mail.</p>";
+                        
+                        // if ($this->mailService->send($email, "Redefinição de Senha - R-Born Id", $emailBody)) {
+                        //     $this->view('User/password_reset_sent', ['email' => $email]);
+                        //     return;
+                        // }
+                        // $errors[] = "Não foi possível enviar o e-mail de redefinição. Tente novamente mais tarde.";
+                        
+                        // Simulação de envio de e-mail para desenvolvimento:
+                        $_SESSION['password_reset_token_for_dev'] = $token; // Apenas para facilitar o teste local
+                        $this->view('User/password_reset_sent', ['email' => $email, 'dev_token' => $token]);
+                        return;
+                    }
+                    $errors[] = "Erro ao processar sua solicitação. Tente novamente.";
+                } else {
+                    // Não informar se o e-mail existe ou não por segurança, mas exibir mensagem genérica.
+                    // No entanto, para o fluxo de teste, podemos ser mais diretos.
+                    // $errors[] = "Se um e-mail correspondente for encontrado, um link de redefinição será enviado.";
+                    // Para teste, vamos exibir a página de "enviado" mesmo que o email não exista,
+                    // para não revelar quais emails estão cadastrados.
+                    // A lógica real de envio só ocorreria se $user fosse encontrado.
+                    $this->view('User/password_reset_sent', ['email' => $email]);
+                    return;
+                }
+            }
+            $this->view('User/forgot_password_form', ['errors' => $errors, 'post' => $_POST]);
+        } else {
+            header('Location: /user/forgot-password');
+            exit;
+        }
+    }
+
+    /**
+     * Exibe o formulário para o usuário inserir a nova senha.
+     *
+     * @param string $token O token de redefinição.
+     * @return void
+     */
+    public function resetPasswordForm(string $token): void
+    {
+        $user = $this->userModel->findByPasswordResetToken($token);
+        if ($user) {
+            $this->view('User/reset_password_form', ['token' => $token]);
+        } else {
+            $this->view('User/password_reset_failed', ['message' => 'Token de redefinição inválido ou expirado.']);
+        }
+    }
+
+    /**
+     * Processa a atualização da senha.
+     *
+     * @return void
+     */
+    public function updatePassword(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $token = filter_input(INPUT_POST, 'token', FILTER_SANITIZE_SPECIAL_CHARS);
+            $password = $_POST['password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
+            $errors = [];
+
+            $user = $this->userModel->findByPasswordResetToken($token ?? '');
+
+            if (!$user) {
+                $this->view('User/password_reset_failed', ['message' => 'Token de redefinição inválido ou expirado.']);
+                return;
+            }
+
+            // Reutilizar a validação de senha do cadastro, se aplicável, ou criar uma específica.
+            if (strlen($password) < 8) {
+                $errors[] = "A senha deve ter no mínimo 8 caracteres.";
+            } elseif (!preg_match('/[a-z]/', $password) || !preg_match('/[0-9]/', $password) || !preg_match('/[^a-zA-Z0-9\s]/', $password)) {
+                $errors[] = "A senha deve conter letras, números e caracteres especiais.";
+            }
+            if ($password !== $confirmPassword) {
+                $errors[] = "As senhas não coincidem.";
+            }
+
+            if (empty($errors)) {
+                if ($this->userModel->updatePassword((int)$user['id'], $password)) {
+                    unset($_SESSION['password_reset_token_for_dev']); // Limpar token de dev
+                    $this->view('User/password_reset_success');
+                    return;
+                }
+                $errors[] = "Erro ao atualizar a senha. Tente novamente.";
+            }
+            $this->view('User/reset_password_form', ['errors' => $errors, 'token' => $token, 'post' => $_POST]);
+        } else {
+            header('Location: /user/login'); // Ou para uma página de erro genérica
+            exit;
+        }
+    }
 
     // TODO: Implementar métodos para RF02 (login, recuperação de senha, etc.)
 }
