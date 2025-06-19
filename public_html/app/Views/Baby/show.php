@@ -9,6 +9,11 @@
     <style>
     body {
         background-color: #f8f9fa;
+        background-image: url('/src/images/bg_checkBaby.jpeg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
     }
 
     .container {
@@ -42,7 +47,9 @@
 <body>
     <div class="container">
         <?php if (isset($baby) && !empty($baby)): ?>
-        <h1 class="mb-4 text-center">Detalhes de <?php echo htmlspecialchars($baby['name']); ?></h1>
+        <h2 class="mb-2 text-center">Olá, eu sou <i
+                class="text-secondary"><?php echo htmlspecialchars($baby['name']); ?></i>.</h2>
+        <h5 class="mb-4 text-center">Abaixo segue meus dados.</h5>
 
         <div class="row">
             <div class="col-md-4 text-center">
@@ -55,17 +62,16 @@
                 <img src="/<?php echo ltrim(htmlspecialchars($baby['image_path']), '/'); ?>"
                     alt="Foto de <?php echo htmlspecialchars($baby['name']); ?>" class="baby-image" />
                 <?php else: ?>
-                <img src="/path/to/default/placeholder_image.png" alt="Sem foto" class="baby-image" />
+                <img src="/src/images/placeholder_baby.jpeg" alt="Sem foto" class="baby-image" />
                 <p><small>Imagem não disponível.</small></p>
                 <?php endif; ?>
             </div>
             <div class="col-md-8">
                 <dl class="row">
-                    <dt class="col-sm-4">Nº de Registro (Sistema):</dt>
-                    <dd class="col-sm-8"><?php echo htmlspecialchars($baby['registration_number']); ?></dd>
 
                     <dt class="col-sm-4">Data de Nascimento:</dt>
-                    <dd class="col-sm-8"><?php echo htmlspecialchars(date('d/m/Y', strtotime($baby['birth_date']))); ?>
+                    <dd class="col-sm-8">
+                        <?php echo htmlspecialchars(date('d/m/Y', strtotime($baby['birth_date']))); ?>
                     </dd>
 
                     <dt class="col-sm-4">Gênero:</dt>
@@ -101,6 +107,11 @@
                     <dt class="col-sm-4">Características Especiais:</dt>
                     <dd class="col-sm-8"><?php echo nl2br(htmlspecialchars($baby['characteristics'])); ?></dd>
                     <?php endif; ?>
+
+                    <dt class="col-sm-4 mt-3 text-secondary">Código de validação:</dt>
+                    <dd class="col-sm-8 mt-3  text-secondary">
+                        <?php echo htmlspecialchars($baby['registration_number']); ?></dd>
+
                 </dl>
                 <a href="/" class="btn btn-secondary mt-3">Voltar para Início</a>
                 <a href="/document/birth-certificate/<?php echo htmlspecialchars($baby['registration_number']); ?>"
