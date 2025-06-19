@@ -1,0 +1,266 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body,
+html {
+  height: 100%;
+  max-height: 85dvh;
+  /* overflow: hidden; */
+  background: linear-gradient(135deg, #87ceeb 0%, #4682b4 50%, #1e3c72 100%);
+  font-family: Arial, sans-serif;
+}
+
+#logo {
+  max-width: 200px;
+  width: 200px;
+  img {
+    width: 50px;
+  }
+  span {
+    font-size: 1.5rem;
+    color: #f472b6;
+    font-weight: bold;
+    margin-left: 10px;
+  }
+}
+.sky {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(to bottom, #87ceeb 0%, #c9e2e7 100%);
+  overflow: hidden;
+}
+
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 2s infinite alternate;
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.star:nth-child(odd) {
+  animation-duration: 1.5s;
+}
+
+.star:nth-child(even) {
+  animation-duration: 2.5s;
+}
+
+.star:nth-child(3n) {
+  animation-duration: 3s;
+}
+
+.fun-star {
+  position: absolute;
+  animation: bounce 2s ease-in-out infinite, colorChange 4s linear infinite;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+  }
+}
+
+@keyframes colorChange {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    filter: hue-rotate(90deg);
+  }
+  50% {
+    filter: hue-rotate(180deg);
+  }
+  75% {
+    filter: hue-rotate(270deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+.star-5-points {
+  margin: auto;
+  position: relative;
+  display: inline-block;
+  transform: rotate(180deg);
+  border-right: 10px solid transparent;
+  border-left: 10px solid transparent;
+  border-bottom: calc(10px * 0.7275) solid #ffff00;
+}
+
+.star-5-points::before {
+  content: "";
+  position: absolute;
+  transform: translateX(-50%) rotate(110deg);
+  border-right: 10px solid transparent;
+  border-left: 10px solid transparent;
+  border-top: calc(10px * 0.728) solid #ffff00;
+}
+
+.star-5-points::after {
+  content: "";
+  position: absolute;
+  transform: translateX(-50%) rotate(70deg);
+  border-right: 10px solid transparent;
+  border-left: 10px solid transparent;
+  border-bottom: calc(10px * 0.728) solid #ffff00;
+}
+
+.moon {
+  position: absolute;
+  top: 15%;
+  right: 15%;
+  width: 80px;
+  height: 80px;
+  background: #f5f5f5;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(245, 245, 245, 0.3);
+  animation: moonGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes moonGlow {
+  0% {
+    box-shadow: 0 0 20px rgba(245, 245, 245, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 30px rgba(245, 245, 245, 0.6);
+  }
+}
+
+.moon::before {
+  content: "";
+  position: absolute;
+  top: 20%;
+  left: 30%;
+  width: 12px;
+  height: 12px;
+  background: #e0e0e0;
+  border-radius: 50%;
+}
+
+.moon::after {
+  content: "";
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 50%;
+}
+
+.constellation {
+  position: absolute;
+  top: 40%;
+  left: 30%;
+}
+
+.constellation-star {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #ffff99;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+.constellation-line {
+  position: absolute;
+  height: 1px;
+  background: rgba(255, 255, 153, 0.3);
+  transform-origin: left center;
+}
+
+@keyframes move {
+  0% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 100% 0;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .moon {
+    width: 50px;
+    height: 50px;
+    top: 10%;
+    right: 10%;
+  }
+}
+
+.container {
+  margin-top: 30px;
+  margin-bottom: 30px;
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.baby-image {
+  max-width: 100%;
+  height: 90%;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  max-height: 400px;
+  object-fit: cover;
+}
+
+dt {
+  font-weight: bold;
+}
+
+dd {
+  margin-bottom: 0.5rem;
+}
