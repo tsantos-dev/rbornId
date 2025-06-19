@@ -116,6 +116,21 @@ class Baby
     }
 
     /**
+     * Encontra todos os bebês pertencentes a um usuário específico.
+     *
+     * @param int $userId O ID do usuário.
+     * @return array Retorna um array de bebês.
+     */
+    public function findByUserId(int $userId): array
+    {
+        $stmt = $this->db->prepare("SELECT id, name, registration_number, image_path FROM babies WHERE user_id = :user_id ORDER BY created_at DESC");
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+    /**
      * Atualiza o campo civil_registration de um bebê.
      *
      * @param int $babyId O ID do bebê.

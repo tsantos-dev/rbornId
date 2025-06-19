@@ -29,6 +29,9 @@ $router = new \App\Core\Router(); // Usando FQCN (Fully Qualified Class Name)
 // --- Definição de Rotas ---
 
 // Rota Principal
+// Se o usuário estiver logado, redireciona para o dashboard, senão para o HomeController
+// Esta lógica pode ser colocada no HomeController@index ou aqui.
+// Por simplicidade, vamos manter o HomeController@index para a página pública inicial.
 $router->addRoute('GET', '/', 'HomeController@index'); // Controller e método para a página inicial
 
 // RF01: Cadastro de Usuário
@@ -39,7 +42,11 @@ $router->addRoute('GET', '/user/verify/{token}', 'UserController@verifyEmail'); 
 // RF02: Login de Usuário (exemplos de rotas)
 $router->addRoute('GET', '/user/login', 'UserController@loginForm');
 $router->addRoute('POST', '/user/authenticate', 'UserController@authenticate');
-// $router->addRoute('GET', '/logout', 'UserController@logout');
+$router->addRoute('GET', '/user/logout', 'UserController@logout');
+$router->addRoute('GET', '/user/profile', 'UserController@profile'); // Rota para o perfil do usuário
+
+// Dashboard do Usuário
+$router->addRoute('GET', '/dashboard', 'DashboardController@index');
 
 // RF03: Cadastro de Bebê Reborn & RF05: Visualização
 $router->addRoute('GET', '/baby/new', 'BabyController@createForm'); // Exibe formulário de cadastro (RF03)

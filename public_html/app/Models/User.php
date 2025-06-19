@@ -149,6 +149,21 @@ class User
     }
 
     /**
+     * Encontra um usuário pelo seu ID.
+     *
+     * @param int $id O ID do usuário.
+     * @return array|false Retorna os dados do usuário como array ou false se não encontrado.
+     */
+    public function findById(int $id): array|false
+    {
+        // Selecionar apenas os campos necessários para o perfil, excluindo a senha, por exemplo.
+        $stmt = $this->db->prepare("SELECT id, name, email, cpf, created_at, email_verified_at FROM users WHERE id = :id");
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * TODO: Implementar validação de formato de CPF (RF01).
      * Esta função pode ser mais complexa, envolvendo cálculo de dígitos verificadores.
      * Por ora, uma validação simples de formato.

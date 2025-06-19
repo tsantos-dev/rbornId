@@ -70,22 +70,22 @@ class UserController extends Controller
                     $token = bin2hex(random_bytes(32)); // Gera um token seguro
                     $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour')); // Token expira em 1 hora
 
-                    if ($this->userModel->setEmailVerificationToken($userId, $token, $expiresAt)) {
-                        $verificationLink = $this->getBaseUrl() . "/user/verify/{$token}";
-                        $emailBody = "<h1>Bem-vindo ao R-Born Id!</h1>
-                                      <p>Obrigado por se cadastrar. Por favor, clique no link abaixo para verificar seu e-mail:</p>
-                                      <p><a href='{$verificationLink}'>Verificar E-mail</a></p>
-                                      <p>Se você não se cadastrou, por favor ignore este e-mail.</p>";
+                    // if ($this->userModel->setEmailVerificationToken($userId, $token, $expiresAt)) {
+                    //     $verificationLink = $this->getBaseUrl() . "/user/verify/{$token}";
+                    //     $emailBody = "<h1>Bem-vindo ao R-Born Id!</h1>
+                    //                   <p>Obrigado por se cadastrar. Por favor, clique no link abaixo para verificar seu e-mail:</p>
+                    //                   <p><a href='{$verificationLink}'>Verificar E-mail</a></p>
+                    //                   <p>Se você não se cadastrou, por favor ignore este e-mail.</p>";
                         
-                        if ($this->mailService->send($email, "Confirme seu E-mail - R-Born Id", $emailBody)) {
-                            // Exibir mensagem de sucesso com instrução para verificar e-mail
-                            $this->view('User/registration_success', ['email' => $email]);
-                            return;
-                        }
-                        $errors[] = "Usuário cadastrado, mas houve um erro ao enviar o e-mail de confirmação. Por favor, contate o suporte.";
-                    } else {
-                        $errors[] = "Erro ao preparar a verificação de e-mail. Por favor, contate o suporte.";
-                    }
+                    //     if ($this->mailService->send($email, "Confirme seu E-mail - R-Born Id", $emailBody)) {
+                    //         // Exibir mensagem de sucesso com instrução para verificar e-mail
+                    //         $this->view('User/registration_success', ['email' => $email]);
+                    //         return;
+                    //     }
+                    //     $errors[] = "Usuário cadastrado, mas houve um erro ao enviar o e-mail de confirmação. Por favor, contate o suporte.";
+                    // } else {
+                    //     $errors[] = "Erro ao preparar a verificação de e-mail. Por favor, contate o suporte.";
+                    // }
                     return;
                 } else {
                     $errors[] = "Erro ao cadastrar o usuário. Tente novamente.";
@@ -102,6 +102,34 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * Realiza o logout do usuário.
+     * Destrói a sessão e redireciona para a página de login.
+     *
+     * @return void
+     */
+    public function logout(): void
+    {
+        // Destruir todas as variáveis de sessão.
+        $_SESSION = [];
+
+        // Se é desejável destruir a sessão completamente, apague também o cookie de sessão.
+        // Nota: Isso destruirá a sessão, e não apenas os dados da sessão!
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+
+        // Finalmente, destruir a sessão.
+        session_destroy();
+
+        // Redirecionar para a página de login
+        header('Location: /user/login');
+        exit;
+    }
     /**
      * Exibe o formulário de login.
      *
@@ -148,7 +176,7 @@ class UserController extends Controller
                         $_SESSION['user_name'] = $user['name'];
                         // TODO: Limpar tentativas de login falhas para este usuário
                         // TODO: Redirecionar para o painel do usuário ou página inicial logada
-                        header('Location: /'); // Exemplo: redirecionar para a home
+                        header('Location: /dashboard'); 
                         exit;
                     }
                 }
@@ -254,6 +282,29 @@ class UserController extends Controller
         return $protocol . $host;
     }
 
+    /**
+     * Exibe a página de perfil do usuário.
+     *
+     * @return void
+     */
+    public function profile(): void
+    {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /user/login');
+            exit;
+        }
+
+        $userId = $_SESSION['user_id'];
+        $user = $this->userModel->findById($userId); // findById precisa existir no UserModel
+
+        if (!$user) {
+            // Isso não deveria acontecer se o user_id na sessão for válido
+            // Mas é uma boa prática verificar.
+            $this->view('Errors/404', ['message' => 'Usuário não encontrado.']);
+            return;
+        }
+        $this->view('User/profile', ['user' => $user]);
+    }
 
 
     // TODO: Implementar métodos para RF02 (login, recuperação de senha, etc.)
