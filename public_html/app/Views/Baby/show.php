@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>R-Born IDDados do seu Bebê</title>
+    <title>R-Born ID - Dados do seu Bebê</title>
     <link rel="stylesheet" href="/src/css/baby_detail.css" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -99,6 +99,8 @@
                     <a href="/" class="btn btn-secondary mt-3">Voltar para Início</a>
                     <a href="/document/birth-certificate/<?php echo htmlspecialchars($baby['registration_number']); ?>"
                         class="btn btn-primary mt-3">Gerar Certidão de Nascimento</a>
+                    <a href="/cin/request/<?php echo htmlspecialchars($baby['registration_number']); ?>"
+                        class="btn btn-success mt-3">Solicitar CIN</a>
                 </div>
             </div>
             <?php else: ?>
