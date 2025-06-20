@@ -116,6 +116,13 @@
 
     <div class="container dashboard-container">
 
+        <?php if (isset($successMessage) && !empty($successMessage)): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <?php echo htmlspecialchars($successMessage); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php endif; ?>
+
         <div class="row">
             <div class="col offset-md-3">
                 <?php if (!empty($babies)): ?>

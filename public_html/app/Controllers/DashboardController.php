@@ -32,6 +32,15 @@ class DashboardController extends Controller
         $userId = $_SESSION['user_id'];
         $babies = $this->babyModel->findByUserId($userId);
 
-        $this->view('Dashboard/index', ['babies' => $babies, 'userName' => $_SESSION['user_name'] ?? 'Usuário']);
+        $successMessage = $_SESSION['success_message'] ?? null;
+        if ($successMessage) {
+            unset($_SESSION['success_message']); // Limpa a mensagem após lê-la
+        }
+
+        $this->view('Dashboard/index', [
+            'babies' => $babies, 
+            'userName' => $_SESSION['user_name'] ?? 'Usuário',
+            'successMessage' => $successMessage
+        ]);
     }
 }
