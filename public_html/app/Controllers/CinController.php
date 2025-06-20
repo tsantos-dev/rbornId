@@ -5,11 +5,13 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Baby;
 use App\Models\BabyCinDocumentModel;
+use App\Services\PaymentService;
 
 class CinController extends Controller
 {
     private Baby $babyModel;
     private BabyCinDocumentModel $babyCinDocumentModel;
+    private PaymentService $paymentService;
 
     public function __construct()
     {
@@ -25,6 +27,7 @@ class CinController extends Controller
 
         $this->babyModel = new Baby();
         $this->babyCinDocumentModel = new BabyCinDocumentModel();
+        $this->paymentService = new PaymentService();
     }
 
     /**
@@ -124,12 +127,30 @@ class CinController extends Controller
         $cinId = $this->babyCinDocumentModel->createOrUpdateForBaby((int)$baby['id'], $data);
 
         if ($cinId) {
-            // Sucesso! Agora, iniciar o fluxo de pagamento.
-            // TODO: Implementar a criação da sessão de checkout do Stripe aqui.
-            // Por enquanto, vamos redirecionar para o dashboard com uma mensagem de sucesso (simulando).
-            $_SESSION['success_message'] = 'Dados da CIN salvos com sucesso! Próximo passo: pagamento.';
-            header('Location: /dashboard');
-            exit;
+            // Sucesso! Agora, iniciar o fluxo de pagamento usando o PaymentService.
+            try {
+                $paymentData = [
+                    'userId' => (int)$_SESSION['user_id'],
+                    'babyId' => (int)$baby['id'],
+                    'documentType' => 'cin',
+                    'productName' => 'Emissão da CIN (Carteira de Identidade Nacional)',
+                    'productDescription' => 'Documento para o bebê ' . $baby['name'],
+                    'amountInCents' => 2000, // Valor em centavos (R$ 20,00)
+                    'currency' => 'brl'
+                ];
+
+                $checkout_session = $this->paymentService->createCheckoutSession($paymentData);
+
+                // Redirecionar para o checkout do Stripe
+                header("HTTP/1.1 303 See Other");
+                header("Location: " . $checkout_session->url);
+                exit;
+
+            } catch (\Exception $e) {
+                $_SESSION['errors'] = ['Erro ao iniciar pagamento: ' . $e->getMessage()];
+                header('Location: /cin/request/' . $baby_registration_number);
+                exit;
+            }
         } else {
             // Erro ao salvar no banco
             $_SESSION['errors'] = ['Ocorreu um erro ao salvar os dados. Por favor, tente novamente.'];
@@ -137,6 +158,69 @@ class CinController extends Controller
             header('Location: /cin/request/' . $baby_registration_number);
             exit;
         }
+    }
+
+    private function validateCinData(array $data): array
+    {
+        $errors = [];
+        $validUfs = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+        $validBloodTypes = ['A', 'B', 'AB', 'O', ''];
+        $validRhFactors = ['Positivo', 'Negativo', ''];
+
+        if (empty($data['place_of_birth_city'])) {
+            $errors[] = 'Cidade de Nascimento é obrigatória.';
+        }
+        if (empty($data['place_of_birth_state'])) {
+            $errors[] = 'Estado de Nascimento (UF) é obrigatório.';
+        } elseif (!in_array($data['place_of_birth_state'], $validUfs)) {
+            $errors[] = 'Estado de Nascimento (UF) inválido.';
+        }
+        if (empty($data['nationality'])) {
+            $errors[] = 'Nacionalidade é obrigatória.';
+        }
+        if (!in_array($data['blood_type'], $validBloodTypes)) {
+            $errors[] = 'Tipo Sanguíneo inválido.';
+        }
+        if (!in_array($data['rh_factor'], $validRhFactors)) {
+            $errors[] = 'Fator RH inválido.';
+        }
+        // Validação cruzada: se um campo de sangue for preenchido, o outro também deve ser.
+        if ((!empty($data['blood_type']) && empty($data['rh_factor'])) || (empty($data['blood_type']) && !empty($data['rh_factor']))) {
+            $errors[] = 'Tipo Sanguíneo e Fator RH devem ser preenchidos em conjunto.';
+        }
+
+        return $errors;
+    }
+}
+                ]);
+
+                // Salvar o ID da sessão na tabela payments (status 'pending')
+                // TODO: Implementar o método createPaymentRecord no BabyCinDocumentModel para criar o registro de pagamento
+                // $this->babyCinDocumentModel->createPaymentRecord($baby['id'], $checkout_session->id, 2000, 'brl');
+
+                // Redirecionar para o checkout do Stripe
+                header("HTTP/1.1 303 See Other");
+                header("Location: " . $checkout_session->url);
+
+            } catch (\Stripe\Exception\ApiErrorException $e) {
+                $_SESSION['errors'] = ['Erro ao iniciar pagamento: ' . $e->getMessage()];
+                header('Location: /cin/request/' . $baby_registration_number);
+                exit;
+            }
+        } else {
+            // Erro ao salvar no banco
+            $_SESSION['errors'] = ['Ocorreu um erro ao salvar os dados. Por favor, tente novamente.'];
+            $_SESSION['post_data'] = $_POST;
+            header('Location: /cin/request/' . $baby_registration_number);
+            exit;
+        }
+    }
+
+    private function getBaseUrl(): string
+    {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+        $host = $_SERVER['HTTP_HOST'];
+        return $protocol . $host;
     }
 
     private function validateCinData(array $data): array

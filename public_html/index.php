@@ -60,6 +60,10 @@ $router->addRoute('GET', '/baby/{registration_number}', 'BabyController@show'); 
 // RF04: Geração de Documentos (exemplo)
 $router->addRoute('GET', '/document/birth-certificate/{registration_number}', 'DocumentController@generateBirthCertificatePdf');
 
+// RF04: Geração de CIN (Carteira de Identidade Nacional)
+$router->addRoute('GET', '/cin/request/{baby_registration_number}', 'CinController@requestForm'); // Exibe formulário de dados da CIN
+$router->addRoute('POST', '/cin/process/{baby_registration_number}', 'CinController@processRequest'); // Processa dados e inicia pagamento
+
 
 // RF06: API REST
 $router->addRoute('GET', '/api/babies/{civil_registration}', 'ApiController@getBaby');
