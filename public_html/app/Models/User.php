@@ -69,7 +69,11 @@ class User
      */
     public function findByEmail(string $email): array|false // TODO: Considerar retornar um objeto User
     {
-        $stmt = $this->db->prepare("SELECT id, name, email, cpf, password, email_verified_at FROM users WHERE email = :email");
+        $stmt = $this->db->prepare(
+            "SELECT id, name, email, cpf, password, email_verified_at, 
+                    failed_login_attempts, account_locked_until 
+             FROM users WHERE email = :email"
+        );
         $stmt->bindParam(':email', $email);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -219,6 +223,62 @@ class User
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':password', $hashedPassword);
         $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    /**
+     * Incrementa o contador de tentativas de login falhas para um usuário.
+     *
+     * @param string $email O e-mail do usuário.
+     * @return bool Retorna true em caso de sucesso, false caso contrário.
+     */
+    public function incrementFailedLoginAttempts(string $email): bool
+    {
+        $sql = "UPDATE users 
+                SET failed_login_attempts = failed_login_attempts + 1, 
+                    last_failed_login_at = NOW() 
+                WHERE email = :email";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':email', $email);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            // error_log("Erro ao incrementar tentativas de login: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Reseta o contador de tentativas de login falhas e o status de bloqueio para um usuário.
+     *
+     * @param int $userId O ID do usuário.
+     * @return bool Retorna true em caso de sucesso, false caso contrário.
+     */
+    public function resetFailedLoginAttempts(int $userId): bool
+    {
+        $sql = "UPDATE users 
+                SET failed_login_attempts = 0, 
+                    last_failed_login_at = NULL, 
+                    account_locked_until = NULL 
+                WHERE id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    /**
+     * Bloqueia a conta de um usuário por um determinado período.
+     *
+     * @param string $email O e-mail do usuário.
+     * @param int $lockDurationMinutes Duração do bloqueio em minutos.
+     * @return bool Retorna true em caso de sucesso, false caso contrário.
+     */
+    public function lockAccount(string $email, int $lockDurationMinutes): bool
+    {
+        $sql = "UPDATE users SET account_locked_until = TIMESTAMPADD(MINUTE, :duration, NOW()) WHERE email = :email";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':duration', $lockDurationMinutes, PDO::PARAM_INT);
+        $stmt->bindParam(':email', $email);
         return $stmt->execute();
     }
 

@@ -43,6 +43,10 @@ $router->addRoute('GET', '/user/verify/{token}', 'UserController@verifyEmail'); 
 $router->addRoute('GET', '/user/login', 'UserController@loginForm');
 $router->addRoute('POST', '/user/authenticate', 'UserController@authenticate');
 $router->addRoute('GET', '/user/logout', 'UserController@logout');
+$router->addRoute('GET', '/user/forgot-password', 'UserController@forgotPasswordForm');      // Exibe formulário para pedir reset
+$router->addRoute('POST', '/user/send-reset-link', 'UserController@sendPasswordResetLink'); // Processa pedido e envia link
+$router->addRoute('GET', '/user/reset-password/{token}', 'UserController@resetPasswordForm'); // Exibe formulário para nova senha
+$router->addRoute('POST', '/user/update-password', 'UserController@updatePassword');         // Processa nova senha
 $router->addRoute('GET', '/user/profile', 'UserController@profile'); // Rota para o perfil do usuário
 
 // Dashboard do Usuário

@@ -18,6 +18,9 @@ class UserController extends Controller
     /** @var MailService Instância do serviço de e-mail. */
     private MailService $mailService;
 
+    private const MAX_LOGIN_ATTEMPTS = 5;
+    private const LOCKOUT_DURATION_MINUTES = 15; // Duração do bloqueio em minutos
+
     /**
      * Construtor da classe UserController.
      * Inicializa o modelo User.
@@ -163,6 +166,15 @@ class UserController extends Controller
                 $user = $this->userModel->findByEmail($email);
 
                 if ($user) {
+                    // Verificar se a conta está bloqueada
+                    if ($user['account_locked_until'] && strtotime($user['account_locked_until']) > time()) {
+                        $remainingTime = strtotime($user['account_locked_until']) - time();
+                        $minutes = ceil($remainingTime / 60);
+                        $errors[] = "Sua conta está temporariamente bloqueada. Tente novamente em {$minutes} minuto(s).";
+                        $this->view('User/login', ['errors' => $errors, 'post' => $_POST]);
+                        return;
+                    }
+
                     // Verificar se o e-mail foi confirmado
                     // if (empty($user['email_verified_at'])) {
                     //     $errors[] = "Por favor, confirme seu e-mail antes de fazer login.";
@@ -170,18 +182,38 @@ class UserController extends Controller
                     //     return;
                     // }
 
+                    // Se a conta estava bloqueada mas o tempo expirou, resetar tentativas antes de verificar senha
+                    // Isso garante que o usuário tenha novas chances após o período de bloqueio.
+                    if ($user['account_locked_until'] && strtotime($user['account_locked_until']) <= time()) {
+                        if ($user['failed_login_attempts'] >= self::MAX_LOGIN_ATTEMPTS) {
+                             $this->userModel->resetFailedLoginAttempts((int)$user['id']);
+                             $user['failed_login_attempts'] = 0; // Atualiza a variável local para a lógica subsequente
+                        }
+                    }
+
                     if (password_verify($password, $user['password'])) {
                         // Login bem-sucedido
                         $_SESSION['user_id'] = $user['id'];
                         $_SESSION['user_name'] = $user['name'];
                         // TODO: Limpar tentativas de login falhas para este usuário
                         // TODO: Redirecionar para o painel do usuário ou página inicial logada
+                        $this->userModel->resetFailedLoginAttempts((int)$user['id']);
                         header('Location: /dashboard'); 
                         exit;
                     }
                 }
                 // Se chegou aqui, o e-mail não existe ou a senha está incorreta
-                // TODO: Implementar contador de tentativas e bloqueio (RF02)
+                // Incrementar tentativas de login falhas se o usuário existir
+                if ($user) {
+                    $this->userModel->incrementFailedLoginAttempts($email);
+                    $currentAttempts = ($user['failed_login_attempts'] ?? 0) + 1; // Pega o valor atualizado ou assume 1
+                    if ($currentAttempts >= self::MAX_LOGIN_ATTEMPTS) {
+                        $this->userModel->lockAccount($email, self::LOCKOUT_DURATION_MINUTES);
+                        $errors[] = "Sua conta foi temporariamente bloqueada devido a múltiplas tentativas de login malsucedidas. Tente novamente em " . self::LOCKOUT_DURATION_MINUTES . " minutos.";
+                        $this->view('User/login', ['errors' => $errors, 'post' => $_POST]);
+                        return;
+                    }
+                }
                 $errors[] = "E-mail ou senha inválidos.";
             }
 
