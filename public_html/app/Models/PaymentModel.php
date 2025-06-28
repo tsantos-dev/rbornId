@@ -50,7 +50,35 @@ class PaymentModel
         }
     }
 
-    // TODO: Adicionar métodos para encontrar e atualizar pagamentos, que serão usados pelo webhook.
-    // public function findBySessionId(string $sessionId): array|false { ... }
-    // public function updateStatusBySessionId(string $sessionId, string $status, ?string $paymentIntentId): bool { ... }
+    /**
+     * Encontra um pagamento pelo ID da sessão do Stripe.
+     *
+     * @param string $sessionId
+     * @return array|false
+     */
+    public function findBySessionId(string $sessionId): array|false
+    {
+        $stmt = $this->db->prepare("SELECT * FROM payments WHERE stripe_session_id = :session_id");
+        $stmt->bindParam(':session_id', $sessionId);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Atualiza o status de um pagamento com base no ID da sessão do Stripe.
+     *
+     * @param string $sessionId
+     * @param string $status
+     * @param string|null $paymentIntentId
+     * @return bool
+     */
+    public function updateStatusBySessionId(string $sessionId, string $status, ?string $paymentIntentId): bool
+    {
+        $sql = "UPDATE payments SET status = :status, stripe_payment_intent_id = :payment_intent_id, updated_at = NOW() WHERE stripe_session_id = :session_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':payment_intent_id', $paymentIntentId);
+        $stmt->bindParam(':session_id', $sessionId);
+        return $stmt->execute();
+    }
 }

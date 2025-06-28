@@ -63,11 +63,16 @@ $router->addRoute('GET', '/document/birth-certificate/{registration_number}', 'D
 // RF04: Geração de CIN (Carteira de Identidade Nacional)
 $router->addRoute('GET', '/cin/request/{baby_registration_number}', 'CinController@requestForm'); // Exibe formulário de dados da CIN
 $router->addRoute('POST', '/cin/process/{baby_registration_number}', 'CinController@processRequest'); // Processa dados e inicia pagamento
+$router->addRoute('GET', '/cin/success', 'CinController@success'); // Página de sucesso do pagamento
+$router->addRoute('GET', '/cin/cancel', 'CinController@cancel');   // Página de cancelamento do pagamento
 
 
 // RF06: API REST
 $router->addRoute('GET', '/api/babies/{civil_registration}', 'ApiController@getBaby');
 $router->addRoute('GET', '/api/validate/{civil_registration}', 'ApiController@validateRegistration');
+
+// Webhook do Stripe
+$router->addRoute('POST', '/stripe/webhook', 'StripeWebhookController@handle');
 
 // --- Fim da Definição de Rotas ---
 
