@@ -65,6 +65,7 @@ $router->addRoute('GET', '/cin/request/{baby_registration_number}', 'CinControll
 $router->addRoute('POST', '/cin/process/{baby_registration_number}', 'CinController@processRequest'); // Processa dados e inicia pagamento
 $router->addRoute('GET', '/cin/success', 'CinController@success'); // Página de sucesso do pagamento
 $router->addRoute('GET', '/cin/cancel', 'CinController@cancel');   // Página de cancelamento do pagamento
+$router->addRoute('GET', '/document/cin/{registration_number}', 'DocumentController@downloadCinPdf'); // Download da CIN
 
 
 // RF06: API REST

@@ -68,4 +68,20 @@ class MailService
             return false;
         }
     }
+
+    /**
+     * Adiciona um anexo a partir de uma string de conteúdo.
+     *
+     * @param string $stringConteudo O conteúdo do arquivo.
+     * @param string $nomeArquivo O nome do arquivo.
+     * @param string $codificacao A codificação do anexo.
+     * @param string $tipo O tipo MIME do anexo.
+     * @return void
+     */
+    public function addAttachmentFromString(string $stringConteudo, string $nomeArquivo, string $codificacao = 'base64', string $tipo = 'application/pdf'): void
+    {
+        // O PHPMailer espera o conteúdo bruto, não codificado em base64, para este método.
+        // Se o conteúdo já estiver em base64, ele deve ser decodificado primeiro.
+        $this->mailer->addStringAttachment($stringConteudo, $nomeArquivo, $codificacao, $tipo);
+    }
 }

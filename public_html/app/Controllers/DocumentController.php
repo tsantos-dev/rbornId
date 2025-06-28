@@ -129,4 +129,143 @@ class DocumentController extends Controller
         $host = $_SERVER['HTTP_HOST'];
         return $protocol . $host;
     }
+
+    /**
+     * Rota pública para o usuário baixar o PDF da CIN.
+     *
+     * @param string $registration_number O número de registro do bebê.
+     * @return void
+     */
+    public function downloadCinPdf(string $registration_number): void
+    {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /user/login');
+            exit;
+        }
+
+        $baby = $this->babyModel->findByRegistrationNumber($registration_number);
+
+        if (!$baby || $baby['user_id'] !== $_SESSION['user_id']) {
+            $this->view('Errors/404', ['message' => 'Bebê não encontrado ou você não tem permissão para acessá-lo.']);
+            return;
+        }
+
+        $pdfContent = $this->generateCinPdfContent((int)$baby['id']);
+
+        if (empty($pdfContent)) {
+            $this->view('Errors/404', ['message' => 'Não foi possível gerar a CIN. Verifique se os dados estão completos e o pagamento foi confirmado.']);
+            return;
+        }
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="CIN_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $baby['name']) . '.pdf"');
+        header('Content-Length: ' . strlen($pdfContent));
+
+        echo $pdfContent;
+        exit;
+    }
+
+    /**
+     * Método para ser chamado pelo Webhook para obter o conteúdo do PDF.
+     *
+     * @param int $babyId O ID do bebê.
+     * @return string O conteúdo do PDF como string.
+     */
+    public function getCinPdfContentForWebhook(int $babyId): string
+    {
+        return $this->generateCinPdfContent($babyId);
+    }
+
+    /**
+     * Lógica central que gera o conteúdo do PDF da CIN.
+     *
+     * @param int $babyId O ID do bebê.
+     * @return string Conteúdo do PDF como string, ou string vazia em caso de erro.
+     */
+    private function generateCinPdfContent(int $babyId): string
+    {
+        $baby = $this->babyModel->findById($babyId);
+
+        if (!$baby) {
+            error_log("Bebê não encontrado para gerar a CIN (ID: " . $babyId . ").");
+            return '';
+        }
+
+        $cinData = (new \App\Models\BabyCinDocumentModel())->findByBabyId((int)$baby['id']);
+
+        if (!$cinData || empty($cinData['issue_date']) || empty($cinData['expiry_date'])) {
+            error_log("Dados da CIN incompletos ou pagamento não confirmado para o bebê ID: " . $baby['id']);
+            return '';
+        }
+
+        $validationUrl = $this->getBaseUrl() . '/api/validate/' . $baby['civil_registration'];
+
+        $qrCode = QrCode::create($validationUrl)
+            ->setSize(200)
+            ->setMargin(10);
+        $writer = new PngWriter();
+        $qrCodeImageString = $writer->write($qrCode)->getString();
+        $qrCodeImagePath = 'data://text/plain;base64,' . base64_encode($qrCodeImageString);
+
+        $pdf = new FPDF('P', 'mm', [74, 105]); // Tamanho de um cartão de crédito/RG
+        $pdf->AddPage();
+        $pdf->SetMargins(5, 5, 5);
+        $pdf->SetAutoPageBreak(false);
+
+        // Layout Básico (Frente)
+        $pdf->SetFont('Arial', 'B', 8);
+        $pdf->Cell(0, 5, utf8_decode('REPÚBLICA FEDERATIVA DO BRASIL'), 0, 1, 'C');
+        $pdf->SetFont('Arial', '', 7);
+        $pdf->Cell(0, 4, utf8_decode('CARTEIRA DE IDENTIDADE NACIONAL'), 0, 1, 'C');
+        $pdf->Ln(2);
+
+        // Foto do bebê e QR Code
+        $babyImagePath = PATH_ROOT . $baby['image_path'];
+        if (file_exists($babyImagePath)) {
+            $pdf->Image($babyImagePath, 6, 20, 22, 28); // X, Y, Largura, Altura
+        }
+        $pdf->Image($qrCodeImagePath, 45, 20, 22, 22, 'PNG');
+
+        // Dados
+        $pdf->SetFont('Arial', '', 6);
+        $pdf->SetXY(6, 50);
+        $pdf->Cell(30, 3, utf8_decode('NOME'), 0, 1);
+        $pdf->SetFont('Arial', 'B', 7);
+        $pdf->Cell(30, 4, utf8_decode(strtoupper($baby['name'])), 0, 1);
+
+        if (!empty($cinData['social_name'])) {
+            $pdf->SetFont('Arial', '', 6);
+            $pdf->Cell(30, 3, utf8_decode('NOME SOCIAL'), 0, 1);
+            $pdf->SetFont('Arial', 'B', 7);
+            $pdf->Cell(30, 4, utf8_decode(strtoupper($cinData['social_name'])), 0, 1);
+        }
+
+        $pdf->SetFont('Arial', '', 6);
+        $pdf->Cell(30, 3, utf8_decode('DATA DE NASCIMENTO'), 0, 1);
+        $pdf->SetFont('Arial', 'B', 7);
+        $pdf->Cell(30, 4, date('d/m/Y', strtotime($baby['birth_date'])), 0, 1);
+
+        $pdf->SetFont('Arial', '', 6);
+        $pdf->Cell(30, 3, utf8_decode('CPF'), 0, 1);
+        $pdf->SetFont('Arial', 'B', 7);
+        $pdf->Cell(30, 4, utf8_decode($baby['civil_registration']), 0, 1);
+
+        // Verso (em uma nova página para simplificar)
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', '', 6);
+        $pdf->Cell(30, 3, utf8_decode('FILIAÇÃO'), 0, 1);
+        $pdf->SetFont('Arial', 'B', 7);
+        $pdf->MultiCell(0, 4, utf8_decode(strtoupper($baby['mother_name'])), 0, 'L');
+        if (!empty($baby['father_name'])) {
+            $pdf->MultiCell(0, 4, utf8_decode(strtoupper($baby['father_name'])), 0, 'L');
+        }
+
+        $pdf->SetFont('Arial', '', 6);
+        $pdf->Cell(30, 3, utf8_decode('NATURALIDADE'), 0, 1);
+        $pdf->SetFont('Arial', 'B', 7);
+        $pdf->Cell(30, 4, utf8_decode(strtoupper($cinData['place_of_birth_city'] . '/' . $cinData['place_of_birth_state'])), 0, 1);
+
+        // Retorna o conteúdo do PDF como uma string
+        return $pdf->Output('S');
+    }
 }

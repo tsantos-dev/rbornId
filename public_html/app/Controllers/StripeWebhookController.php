@@ -18,6 +18,7 @@ class StripeWebhookController extends Controller
     {
         $this->paymentModel = new PaymentModel();
         $this->babyCinDocumentModel = new BabyCinDocumentModel();
+        // O DocumentController será instanciado apenas quando necessário.
     }
 
     public function handle(): void
@@ -69,27 +70,44 @@ class StripeWebhookController extends Controller
         // Encontra o pagamento em nosso banco de dados
         $payment = $this->paymentModel->findBySessionId($sessionId);
 
-        if ($payment && $payment['status'] === 'pending') {
+        if ($payment && $payment['status'] === 'pending' && isset($session->metadata['user_id'])) {
             // Atualiza o status do pagamento para 'succeeded'
             $this->paymentModel->updateStatusBySessionId($sessionId, 'succeeded', $paymentIntentId);
 
+            // Busca os dados do usuário para enviar o e-mail
+            $user = (new \App\Models\User())->findById((int)$session->metadata['user_id']);
+
             // Se o pagamento foi para uma CIN, atualiza as datas do documento
-            if ($payment['document_type'] === 'cin') {
+            if ($user && $payment['document_type'] === 'cin') {
                 $cinData = $this->babyCinDocumentModel->findByBabyId((int)$payment['baby_id']);
                 if ($cinData) {
                     // Define a validade do documento (ex: 10 anos)
                     $issueDate = date('Y-m-d');
                     $expiryDate = date('Y-m-d', strtotime('+10 years'));
                     $this->babyCinDocumentModel->updateDates((int)$cinData['id'], $issueDate, $expiryDate);
+
+                    // Geração e envio do PDF
+                    $documentController = new \App\Controllers\DocumentController();
+                    $pdfContent = $documentController->getCinPdfContentForWebhook((int)$payment['baby_id']);
+
+                    if (!empty($pdfContent)) {
+                        $baby = (new \App\Models\Baby())->findById((int)$payment['baby_id']);
+                        $fileName = 'CIN_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $baby['name'] ?? 'bebe') . '.pdf';
+
+                        $mailService = new \App\Core\MailService();
+                        try {
+                            $mailService->addAttachmentFromString($pdfContent, $fileName);
+                            $mailService->send($user['email'], 'Sua CIN R-Born Id está pronta!', 'Olá ' . $user['name'] . ',<br><br>Seu pagamento foi confirmado e a Carteira de Identidade Nacional (CIN) do seu bebê está anexada a este e-mail.<br><br>Atenciosamente,<br>Equipe R-Born Id');
+                        } catch (\Exception $e) {
+                            error_log("Erro ao enviar e-mail com anexo da CIN: " . $e->getMessage());
+                        }
+                    } else {
+                        error_log("Falha ao gerar o conteúdo do PDF da CIN para o bebê ID: " . $payment['baby_id']);
+                    }
                 }
             }
-
-            // TODO: Enviar e-mail de confirmação para o usuário.
-            // $user = (new \App\Models\User())->findById((int)$payment['user_id']);
-            // if ($user) {
-            //     $mailService = new \App\Core\MailService();
-            //     $mailService->send($user['email'], 'Pagamento Confirmado - R-Born Id', 'Seu pagamento foi confirmado e seu documento está disponível.');
-            // }
+        } else {
+            error_log("Erro: pagamento não encontrado ou status não é pendente. Session ID: " . $sessionId);
         }
     }
 }
